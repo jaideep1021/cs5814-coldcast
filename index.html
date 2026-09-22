@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="ColdCast predicts whether an AI system will answer an unseen question correctly before the answer is generated.">
+  <title>ColdCast | CS5814 Course Project</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="hero" id="top">
+    <nav class="nav shell" aria-label="Primary navigation">
+      <a class="brand" href="#top"><span class="brand-mark">C</span>ColdCast</a>
+      <div class="nav-links">
+        <a href="#overview">Overview</a>
+        <a href="#data">Data</a>
+        <a href="#approach">Approach</a>
+        <a href="#proposal">Proposal</a>
+        <a href="#team">Team</a>
+      </div>
+    </nav>
+
+    <div class="hero-content shell">
+      <p class="course-label">Virginia Tech · CS5814 · Fall 2026</p>
+      <h1>ColdCast</h1>
+      <p class="tagline">Predicting AI reliability before the answer is generated</p>
+      <p class="hero-summary">A retrieval augmented and calibrated deep learning system that estimates whether an AI model will correctly solve a previously unseen task.</p>
+      <div class="hero-actions">
+        <a class="button primary" href="Proposal_Kuo_Manchare_Manupati_Rane.pdf">View Project Proposal</a>
+        <a class="button secondary" href="#overview">Explore the Project</a>
+      </div>
+    </div>
+
+    <div class="hero-visual shell" aria-label="ColdCast reliability prediction example">
+      <div class="signal-pill">Question semantics</div>
+      <div class="signal-pill">System profile</div>
+      <div class="prediction-card">
+        <div class="prediction-top"><span>Reliability forecast</span><span class="live">Calibrated</span></div>
+        <div class="probability">78<span>%</span></div>
+        <p>Probability of a correct answer</p>
+        <div class="meter"><span></span></div>
+      </div>
+      <div class="signal-pill">Similar task evidence</div>
+      <div class="signal-pill">Five label adaptation</div>
+    </div>
+  </header>
+
+  <main>
+    <section id="overview" class="section shell">
+      <div class="section-heading">
+        <p class="eyebrow">Project overview</p>
+        <h2>Make informed AI decisions before spending the cost of evaluation</h2>
+      </div>
+      <div class="overview-card">
+        <div class="overview-copy">
+          <p>Modern AI benchmarks usually explain how a model performed after thousands of questions have already been evaluated. In practice, teams often need a useful prediction before committing time, money, and computing resources.</p>
+          <p>ColdCast estimates the probability that an AI system will answer a new question correctly without allowing that system to attempt the question. It combines the meaning of the question, information about the AI system, evidence from similar tasks, and a small number of revealed labels.</p>
+          <p>The result is a calibrated reliability forecast that can support model routing, benchmark planning, human escalation, and safer AI deployment.</p>
+        </div>
+        <div class="overview-stat">
+          <span class="stat-label">Primary output</span>
+          <strong>P(correct)</strong>
+          <p>An honest probability rather than a simple yes or no prediction</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="data" class="data-section">
+      <div class="shell">
+        <div class="section-heading centered compact">
+          <p class="eyebrow">Key data sources</p>
+          <h2>Competition data used by ColdCast</h2>
+          <p class="section-intro">The project uses the official Stanford AIMS Predictive AI Evaluation Competition release.</p>
+        </div>
+        <div class="data-grid">
+          <article><div class="data-icon">RM</div><h3>AI response matrix</h3><p>Observed correct and incorrect outcomes for pairs of AI systems and evaluation items.</p></article>
+          <article><div class="data-icon">SM</div><h3>System metadata</h3><p>Model, provider, harness version, reasoning effort, evaluation date, and configuration settings.</p></article>
+          <article><div class="data-icon">IT</div><h3>Evaluation items</h3><p>Question text, structured item features, and information about tools or interactors.</p></article>
+          <article><div class="data-icon">5L</div><h3>Revealed labels</h3><p>Five observed outcomes per test system for rapid capability adaptation.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section id="approach" class="section shell">
+      <div class="section-heading centered">
+        <p class="eyebrow">Proposed approach</p>
+        <h2>Four complementary signals create one reliability forecast</h2>
+        <p class="section-intro">Each component answers a different question about whether an AI system is likely to succeed.</p>
+      </div>
+      <div class="approach-grid">
+        <article><div class="icon">QT</div><h3>Question representation</h3><p>A pretrained text encoder captures the domain, reasoning type, complexity, and likely difficulty of each task.</p></article>
+        <article><div class="icon">AI</div><h3>System representation</h3><p>Learned embeddings represent the model, provider, reasoning effort, tools, and available configuration details.</p></article>
+        <article><div class="icon">RE</div><h3>Retrieval evidence</h3><p>Semantically related questions reveal how comparable AI systems performed on similar tasks.</p></article>
+        <article><div class="icon">5L</div><h3>Rapid adaptation</h3><p>Five revealed labels update a compact capability profile for a newly evaluated AI system.</p></article>
+      </div>
+    </section>
+
+    <section class="hypothesis-section">
+      <div class="shell hypothesis-grid">
+        <div><p class="eyebrow light">Research hypothesis</p><h2>The complete system will make more accurate and better calibrated predictions.</h2></div>
+        <div class="hypothesis-card">
+          <p>ColdCast will achieve a lower item held out Brier score than global accuracy, system history, metadata only, text only, retrieval only, and neural collaborative filtering baselines.</p>
+          <div class="metric-row"><span>Primary metric</span><strong>Brier score</strong></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="proposal" class="section shell">
+      <div class="section-heading centered compact">
+        <p class="eyebrow">Project file</p>
+        <h2>Project proposal</h2>
+        <p class="section-intro">The current proposal draft presents the motivation, research direction, proposed architecture, evaluation strategy, and semester scope.</p>
+      </div>
+      <div class="proposal-card">
+        <div class="document-icon"><span></span><span></span><span></span></div>
+        <div class="proposal-copy"><p class="file-label">Current document</p><h3>ColdCast Project Proposal Draft</h3><p>Project concept and research plan</p></div>
+        <a class="button primary" href="Proposal_Kuo_Manchare_Manupati_Rane.pdf">Open PDF</a>
+      </div>
+    </section>
+
+    <section id="team" class="team-section">
+      <div class="shell">
+        <div class="section-heading centered compact">
+          <p class="eyebrow light">Meet the team</p>
+          <h2>Virginia Tech Computer Science</h2>
+          <p class="section-intro light-copy">Four graduate students working on predictive AI evaluation and calibrated reliability.</p>
+        </div>
+        <div class="team-grid">
+          <article class="member-card"><img class="avatar member-photo yi-chen-photo" src="assets/team/yi-chen.jpg" alt="Yi Chen Kuo"><h3>Yi Chen Kuo</h3><p>Computer Science</p><span>Virginia Tech</span></article>
+          <article class="member-card"><img class="avatar member-photo sudip-photo" src="assets/team/sudip-manchare.jpeg" alt="Sudip Manchare"><h3>Sudip Manchare</h3><p>Computer Science</p><span>Virginia Tech</span></article>
+          <article class="member-card"><img class="avatar member-photo jaideep-photo" src="assets/team/jaideep-manupati.jpeg" alt="Jaideep Manupati"><h3>Jaideep Manupati</h3><p>Computer Science</p><span>Virginia Tech</span></article>
+          <article class="member-card"><img class="avatar member-photo akshada-photo" src="assets/team/akshada-rane.jpeg" alt="Akshada Shailesh Rane"><h3>Akshada Shailesh Rane</h3><p>Computer Science</p><span>Virginia Tech</span></article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer><div class="shell footer-content"><a class="brand footer-brand" href="#top"><span class="brand-mark">C</span>ColdCast</a><p>Virginia Tech · CS5814 Course Project · Fall 2026</p></div></footer>
+</body>
+</html>
