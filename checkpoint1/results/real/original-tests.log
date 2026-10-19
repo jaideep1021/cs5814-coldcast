@@ -1,0 +1,12 @@
+test_benchmark_and_item_isolation (__main__.PipelineTests.test_benchmark_and_item_isolation) ... ok
+test_duplicate_text_rejected (__main__.PipelineTests.test_duplicate_text_rejected) ... ok
+test_gradients_finite_difference (__main__.PipelineTests.test_gradients_finite_difference) ... ok
+test_label_rejected (__main__.PipelineTests.test_label_rejected) ... ok
+test_metrics (__main__.PipelineTests.test_metrics) ... ok
+test_training_reduces_loss (__main__.PipelineTests.test_training_reduces_loss) ... ok
+test_unknown_category (__main__.PipelineTests.test_unknown_category) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.068s
+
+OK

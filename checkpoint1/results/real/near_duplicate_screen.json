@@ -1,0 +1,6 @@
+{
+  "threshold": 0.98,
+  "cross_source_high_similarity_pairs": 0,
+  "max_cross_source_cosine": 0.6210237741470337,
+  "note": "Embedding-similarity screening is not proof of no paraphrase or source overlap."
+}

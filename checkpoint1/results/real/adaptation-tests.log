@@ -1,0 +1,14 @@
+
+Fontconfig error: No writable cache directories
+	/opt/homebrew/var/cache/fontconfig
+	/Users/jaideepmanupati/.cache/fontconfig
+	/Users/jaideepmanupati/.fontconfig
+Matplotlib is building the font cache; this may take a moment.
+test_pools_disjoint_and_reproducible (__main__.AdaptationTests.test_pools_disjoint_and_reproducible) ... ok
+test_successes_increase_probability (__main__.AdaptationTests.test_successes_increase_probability) ... ok
+test_zero_budget_identity (__main__.AdaptationTests.test_zero_budget_identity) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.020s
+
+OK

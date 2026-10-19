@@ -1,0 +1,26 @@
+{
+  "seeds": [
+    5814,
+    5815,
+    5816
+  ],
+  "max_epochs": 40,
+  "early_stopping_patience": 7,
+  "learning_rate": 0.001,
+  "batch_size": 1024,
+  "hidden": [
+    64,
+    32
+  ],
+  "metadata_embedding_dimensions": 8,
+  "category_dropout": 0.1,
+  "dropout": 0.15,
+  "weight_decay": 0.0001,
+  "selection": "development macro subject-benchmark Brier",
+  "calibration": "calibration response-weighted log loss",
+  "retrieval_k": 10,
+  "retrieval_temperature": 0.15,
+  "torch": "2.14.1",
+  "python": "3.13.5",
+  "elapsed_seconds": 147.34327387809753
+}

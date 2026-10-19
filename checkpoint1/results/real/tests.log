@@ -1,0 +1,12 @@
+test_actual_split_isolation (__main__.RealPipelineTests.test_actual_split_isolation) ... ok
+test_heldout_labels_cannot_change_retrieval (__main__.RealPipelineTests.test_heldout_labels_cannot_change_retrieval) ... ok
+test_math_rubric_selection (__main__.RealPipelineTests.test_math_rubric_selection) ... ok
+test_pair_macro_weighting (__main__.RealPipelineTests.test_pair_macro_weighting) ... ok
+test_real_predictor_schema_excludes_answers (__main__.RealPipelineTests.test_real_predictor_schema_excludes_answers) ... ok
+test_text_group_normalization (__main__.RealPipelineTests.test_text_group_normalization) ... ok
+test_vocabulary_and_unseen_categories (__main__.RealPipelineTests.test_vocabulary_and_unseen_categories) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 4.802s
+
+OK

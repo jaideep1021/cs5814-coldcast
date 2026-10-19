@@ -1,0 +1,17 @@
+{
+  "models_compared": 11,
+  "training_seeds": 3,
+  "benchmark_folds": 5,
+  "secondary_item_split": 1,
+  "automated_tests_passed": 17,
+  "offline_inference_reload_check": true,
+  "all_saved_probabilities_valid": true,
+  "plots_visually_reviewed": 4,
+  "official_competition_submission": false,
+  "ieee_report_updated_this_run": true,
+  "ieee_report_pages": 5,
+  "ieee_report_native_compile": "success",
+  "ieee_pdf_layout_reviewed": true,
+  "publication_verified": false,
+  "ieee_pdf_sha256": "42bf8a0e41282cc461b480dd9abbad33a084c615ada1fc9af0e3ca9af5568a4f"
+}

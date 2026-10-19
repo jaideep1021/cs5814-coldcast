@@ -1,0 +1,9 @@
+__pycache__/
+.venv/
+tmp/
+data/*
+!data/README.md
+# Keep fitted local assets and row-level source-derived records off the public site.
+results/real/models/
+results/real/test_predictions.parquet
+results/real/adaptation_pools.json

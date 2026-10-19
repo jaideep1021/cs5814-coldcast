@@ -1,0 +1,26 @@
+.DS_Store
+# Exclude accidental credential-shaped folder names from publication.
+hf_*/
+
+# Local environments and Python caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Local credentials and settings (keep example configurations publishable)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# LaTeX build intermediates; submission PDFs remain tracked
+*.aux
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.xdv
+*.toc
+*.out

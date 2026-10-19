@@ -1,0 +1,21 @@
+{
+  "eligible_pairs": 122,
+  "source_pair_counts": {
+    "multi_swebench": 44,
+    "researchcodebench": 31,
+    "real_webagents": 26,
+    "matharena": 20,
+    "swe_rebench": 1
+  },
+  "budgets": [
+    0,
+    1,
+    3,
+    7,
+    15,
+    31
+  ],
+  "prior": "Fixed unit Gaussian prior on scalar logit correction",
+  "acquisition": "Random; one recorded response per distinct normalized-text item",
+  "protocol": "Local offline analogue; no official competition score. Same evaluation pool at all budgets. Exact text groups replace raw IDs conservatively."
+}

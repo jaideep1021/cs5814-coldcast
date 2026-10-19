@@ -1,0 +1,375 @@
+{
+  "provenance": "SYNTHETIC SOFTWARE CHECK ONLY; not official competition data or scientific evidence",
+  "seed": 5814,
+  "data_sha256": "028de09206e3ddce5d702518788b852175b007ef0d756ba049b071437887cd1d",
+  "split": {
+    "train": [
+      "b0",
+      "b1",
+      "b4",
+      "b5",
+      "b7"
+    ],
+    "development": [
+      "b3"
+    ],
+    "calibration": [
+      "b6"
+    ],
+    "test": [
+      "b2"
+    ]
+  },
+  "counts": {
+    "train": {
+      "rows": 3200,
+      "items": 400,
+      "subjects": 8,
+      "positive_rate": 0.536875
+    },
+    "development": {
+      "rows": 640,
+      "items": 80,
+      "subjects": 8,
+      "positive_rate": 0.5625
+    },
+    "calibration": {
+      "rows": 640,
+      "items": 80,
+      "subjects": 8,
+      "positive_rate": 0.5015625
+    },
+    "test": {
+      "rows": 640,
+      "items": 80,
+      "subjects": 8,
+      "positive_rate": 0.5671875
+    }
+  },
+  "settings": {
+    "text_logistic": {
+      "selected_epoch": 120,
+      "hidden": []
+    },
+    "metadata_logistic": {
+      "selected_epoch": 120,
+      "hidden": []
+    },
+    "fusion_mlp": {
+      "selected_epoch": 15,
+      "hidden": [
+        64,
+        32
+      ]
+    },
+    "temperature": 1.2730501155464233
+  },
+  "metrics": {
+    "constant_0.5": {
+      "brier": 0.25,
+      "log_loss": 0.6931471805599453,
+      "ece": 0.06718749999999996,
+      "reliability": [
+        {
+          "bin": 5,
+          "count": 640,
+          "confidence": 0.5,
+          "accuracy": 0.5671875
+        }
+      ],
+      "brier_delta_vs_system_95ci": [
+        0.009695399960728355,
+        0.03236577677094177
+      ],
+      "macro_pair_brier": 0.25
+    },
+    "global_rate": {
+      "brier": 0.24640468750000002,
+      "log_loss": 0.6859459521539651,
+      "ece": 0.030312499999999853,
+      "reliability": [
+        {
+          "bin": 5,
+          "count": 640,
+          "confidence": 0.5368750000000001,
+          "accuracy": 0.5671875
+        }
+      ],
+      "brier_delta_vs_system_95ci": [
+        0.007394939070865558,
+        0.02875221803428019
+      ],
+      "macro_pair_brier": 0.2464046875
+    },
+    "system_rate": {
+      "brier": 0.22903151862730517,
+      "log_loss": 0.6500278955615182,
+      "ece": 0.03959984756097562,
+      "reliability": [
+        {
+          "bin": 2,
+          "count": 80,
+          "confidence": 0.2984603658536585,
+          "accuracy": 0.4
+        },
+        {
+          "bin": 3,
+          "count": 80,
+          "confidence": 0.361875,
+          "accuracy": 0.45
+        },
+        {
+          "bin": 4,
+          "count": 80,
+          "confidence": 0.41553353658536585,
+          "accuracy": 0.3875
+        },
+        {
+          "bin": 5,
+          "count": 160,
+          "confidence": 0.5448018292682927,
+          "accuracy": 0.58125
+        },
+        {
+          "bin": 6,
+          "count": 80,
+          "confidence": 0.6204115853658536,
+          "accuracy": 0.6375
+        },
+        {
+          "bin": 7,
+          "count": 160,
+          "confidence": 0.7545579268292683,
+          "accuracy": 0.75
+        }
+      ],
+      "brier_delta_vs_system_95ci": [
+        0.0,
+        0.0
+      ],
+      "macro_pair_brier": 0.2290315186273052
+    },
+    "text_logistic": {
+      "brier": 0.22905004588515246,
+      "log_loss": 0.6497080918234728,
+      "ece": 0.05158681267955691,
+      "reliability": [
+        {
+          "bin": 3,
+          "count": 8,
+          "confidence": 0.38750828424941,
+          "accuracy": 0.625
+        },
+        {
+          "bin": 4,
+          "count": 192,
+          "confidence": 0.45709391574899944,
+          "accuracy": 0.3697916666666667
+        },
+        {
+          "bin": 5,
+          "count": 192,
+          "confidence": 0.5483547491502265,
+          "accuracy": 0.5885416666666666
+        },
+        {
+          "bin": 6,
+          "count": 176,
+          "confidence": 0.6470183299231366,
+          "accuracy": 0.6647727272727273
+        },
+        {
+          "bin": 7,
+          "count": 72,
+          "confidence": 0.7428759379386201,
+          "accuracy": 0.7916666666666666
+        }
+      ],
+      "brier_delta_vs_system_95ci": [
+        -0.0158832739661413,
+        0.01499751159675658
+      ],
+      "macro_pair_brier": 0.22905004588515243
+    },
+    "metadata_logistic": {
+      "brier": 0.22903013814743386,
+      "log_loss": 0.6499606319617641,
+      "ece": 0.041243788728692256,
+      "reliability": [
+        {
+          "bin": 2,
+          "count": 80,
+          "confidence": 0.29287939444313565,
+          "accuracy": 0.4
+        },
+        {
+          "bin": 3,
+          "count": 80,
+          "confidence": 0.3577416105732715,
+          "accuracy": 0.45
+        },
+        {
+          "bin": 4,
+          "count": 80,
+          "confidence": 0.41284344846660426,
+          "accuracy": 0.3875
+        },
+        {
+          "bin": 5,
+          "count": 160,
+          "confidence": 0.5452281272016061,
+          "accuracy": 0.58125
+        },
+        {
+          "bin": 6,
+          "count": 80,
+          "confidence": 0.622189673157189,
+          "accuracy": 0.6375
+        },
+        {
+          "bin": 7,
+          "count": 160,
+          "confidence": 0.758936896969871,
+          "accuracy": 0.75
+        }
+      ],
+      "brier_delta_vs_system_95ci": [
+        -0.00028204044968177836,
+        0.00028161454924985585
+      ],
+      "macro_pair_brier": 0.22903013814743386
+    },
+    "fusion_mlp": {
+      "brier": 0.21158525885574972,
+      "log_loss": 0.6132807214224572,
+      "ece": 0.038264012499358346,
+      "reliability": [
+        {
+          "bin": 1,
+          "count": 41,
+          "confidence": 0.16158464823456162,
+          "accuracy": 0.2682926829268293
+        },
+        {
+          "bin": 2,
+          "count": 56,
+          "confidence": 0.2516274203732289,
+          "accuracy": 0.2857142857142857
+        },
+        {
+          "bin": 3,
+          "count": 74,
+          "confidence": 0.3541356438594569,
+          "accuracy": 0.36486486486486486
+        },
+        {
+          "bin": 4,
+          "count": 74,
+          "confidence": 0.45185550359045573,
+          "accuracy": 0.4864864864864865
+        },
+        {
+          "bin": 5,
+          "count": 65,
+          "confidence": 0.5493539428901394,
+          "accuracy": 0.5230769230769231
+        },
+        {
+          "bin": 6,
+          "count": 98,
+          "confidence": 0.6507617714490308,
+          "accuracy": 0.6122448979591837
+        },
+        {
+          "bin": 7,
+          "count": 105,
+          "confidence": 0.7519579160482666,
+          "accuracy": 0.6952380952380952
+        },
+        {
+          "bin": 8,
+          "count": 105,
+          "confidence": 0.8491408932829557,
+          "accuracy": 0.819047619047619
+        },
+        {
+          "bin": 9,
+          "count": 22,
+          "confidence": 0.9204720072617408,
+          "accuracy": 0.9090909090909091
+        }
+      ],
+      "brier_delta_vs_system_95ci": [
+        -0.029750996313321985,
+        -0.004311786426661691
+      ],
+      "macro_pair_brier": 0.21158525885574977
+    },
+    "fusion_temperature": {
+      "brier": 0.2101298847371849,
+      "log_loss": 0.6086295617655268,
+      "ece": 0.020644501172388214,
+      "reliability": [
+        {
+          "bin": 1,
+          "count": 12,
+          "confidence": 0.1844974629258127,
+          "accuracy": 0.3333333333333333
+        },
+        {
+          "bin": 2,
+          "count": 54,
+          "confidence": 0.24891454960993745,
+          "accuracy": 0.2962962962962963
+        },
+        {
+          "bin": 3,
+          "count": 78,
+          "confidence": 0.34814709941148114,
+          "accuracy": 0.3076923076923077
+        },
+        {
+          "bin": 4,
+          "count": 101,
+          "confidence": 0.4483127271184809,
+          "accuracy": 0.45544554455445546
+        },
+        {
+          "bin": 5,
+          "count": 96,
+          "confidence": 0.5553119924002244,
+          "accuracy": 0.53125
+        },
+        {
+          "bin": 6,
+          "count": 112,
+          "confidence": 0.6524312299606804,
+          "accuracy": 0.6607142857142857
+        },
+        {
+          "bin": 7,
+          "count": 117,
+          "confidence": 0.7493351974906272,
+          "accuracy": 0.7606837606837606
+        },
+        {
+          "bin": 8,
+          "count": 70,
+          "confidence": 0.8367641105596584,
+          "accuracy": 0.8428571428571429
+        }
+      ],
+      "brier_delta_vs_system_95ci": [
+        -0.029480559825705334,
+        -0.008319557509507908
+      ],
+      "macro_pair_brier": 0.21012988473718486
+    }
+  },
+  "elapsed_seconds": 0.317,
+  "environment": {
+    "python": "3.12.14",
+    "numpy": "2.3.5",
+    "platform": "macOS-27.0.1-arm64-arm-64bit"
+  }
+}

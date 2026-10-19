@@ -1,0 +1,9 @@
+numpy
+pandas
+pyarrow
+scikit-learn
+torch
+sentence-transformers
+matplotlib
+pyyaml
+huggingface_hub

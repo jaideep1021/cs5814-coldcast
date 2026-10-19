@@ -1,0 +1,79 @@
+[
+  {
+    "model": "constant_0.5",
+    "mean_delta": -0.03251554247973886,
+    "lower": -0.07361029910433776,
+    "upper": -0.000970896598580423,
+    "warning": "Only five benchmark clusters; descriptive, unstable interval. Seeds averaged before resampling."
+  },
+  {
+    "model": "fusion",
+    "mean_delta": -0.008678267568975762,
+    "lower": -0.026119727341913222,
+    "upper": 0.006232783800728536,
+    "warning": "Only five benchmark clusters; descriptive, unstable interval. Seeds averaged before resampling."
+  },
+  {
+    "model": "fusion_retrieval",
+    "mean_delta": -0.009511413912381245,
+    "lower": -0.029352011407616556,
+    "upper": 0.007989213822179953,
+    "warning": "Only five benchmark clusters; descriptive, unstable interval. Seeds averaged before resampling."
+  },
+  {
+    "model": "fusion_retrieval_temperature",
+    "mean_delta": -0.0047554118259278575,
+    "lower": -0.057641598655529855,
+    "upper": 0.03613996578092894,
+    "warning": "Only five benchmark clusters; descriptive, unstable interval. Seeds averaged before resampling."
+  },
+  {
+    "model": "fusion_temperature",
+    "mean_delta": -0.0006629856346769602,
+    "lower": -0.056529350134682646,
+    "upper": 0.04646886040336427,
+    "warning": "Only five benchmark clusters; descriptive, unstable interval. Seeds averaged before resampling."
+  },
+  {
+    "model": "global_rate",
+    "mean_delta": 0.002468668335672319,
+    "lower": 0.0,
+    "upper": 0.007406005007016958,
+    "warning": "Only five benchmark clusters; descriptive, unstable interval. Seeds averaged before resampling."
+  },
+  {
+    "model": "metadata_logistic",
+    "mean_delta": -0.012645130280230243,
+    "lower": -0.07752147109220829,
+    "upper": 0.035100095838798924,
+    "warning": "Only five benchmark clusters; descriptive, unstable interval. Seeds averaged before resampling."
+  },
+  {
+    "model": "retrieval",
+    "mean_delta": -0.0003019483993245087,
+    "lower": -0.03841796006139491,
+    "upper": 0.02714234072559884,
+    "warning": "Only five benchmark clusters; descriptive, unstable interval. Seeds averaged before resampling."
+  },
+  {
+    "model": "semantic_logistic",
+    "mean_delta": 0.05098272602089606,
+    "lower": 0.011826595278343488,
+    "upper": 0.08436048351701693,
+    "warning": "Only five benchmark clusters; descriptive, unstable interval. Seeds averaged before resampling."
+  },
+  {
+    "model": "system_rate",
+    "mean_delta": 0.0,
+    "lower": 0.0,
+    "upper": 0.0,
+    "warning": "Only five benchmark clusters; descriptive, unstable interval. Seeds averaged before resampling."
+  },
+  {
+    "model": "tfidf_logistic",
+    "mean_delta": -5.2840891131883395e-05,
+    "lower": -0.051184424887121015,
+    "upper": 0.05851122288561934,
+    "warning": "Only five benchmark clusters; descriptive, unstable interval. Seeds averaged before resampling."
+  }
+]
