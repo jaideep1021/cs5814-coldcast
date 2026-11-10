@@ -1,0 +1,19 @@
+{
+  "report_pages": 7,
+  "editor_compilation": "passed",
+  "team_confirmed_progress_entries": 4,
+  "report_alc_rows_matched_to_results_csv": 9,
+  "acquisition_scores_before_aggregation": 237168,
+  "local_website_target_verified": true,
+  "artifact_sha256": {
+    "ColdCast_Checkpoint_II_IEEE.tex": "0fa17696c418b9e8599420d68cda536dd3e7fbf5a191dbcb65410ea18cf266dd",
+    "output/pdf/ColdCast_Checkpoint_II_IEEE.pdf": "1db64c2b7770d326deef68cc0c2c679050e0b9692f08e7d9b137ec013e2e00c6",
+    "CONTRIBUTIONS.md": "c1e6389c822841a072e3e6d0bfeaa33c490da0224dcd4078a7622a0824ebbd55",
+    "REAL_RESULTS.md": "47aa1788dddc33ec5e75ea73710c786926b905222bc4bcc1948376d435205aaf",
+    "report_source.md": "a6e5af5a3d2b237692f3dd044e3ac9aece6d75fcdfb7dae780549684e8db39e7",
+    "src/run_acquisition.py": "da1c41b2cce1358be7e967e8eb67f5e3082e0fd51f5aa7034a064e9527f29e06",
+    "src/plot_results.py": "bcc1cef4d1bf701198a7464b404625acabc6db7e72201cfa7b6752aa5a9216ee",
+    "results/run.json": "434b0a24d72dc17cd2074151ac5b4ebdaf6b8d0f4063b8f7227b882c40d8027e",
+    "results/policy_summary.csv": "415c3ca765d66fcf53d918fe8cf1e1c1acbb52bef818ccf84744f54839c4a7ea"
+  }
+}

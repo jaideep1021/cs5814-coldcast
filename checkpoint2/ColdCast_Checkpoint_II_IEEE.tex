@@ -1,0 +1,507 @@
+% Compile with pdfLaTeX using the official IEEEtran class.
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{url}
+\usepackage{enumitem}
+\usepackage{microtype}
+% Plot coordinates come from the predictor and acquisition result CSVs.
+% Embedded vector figures keep this document self-contained.
+\definecolor{coldblue}{RGB}{32,95,153}
+\definecolor{coldorange}{RGB}{194,91,32}
+
+% Standard IEEEtran conference layout; no margin or font-size overrides.
+% Standalone source with IEEE conference formatting.
+\title{ColdCast: Calibrated Cold-Start Prediction of AI System Performance}
+
+\author{
+\IEEEauthorblockN{Yi Chen Kuo, Sudip Manchare, Jaideep Manupati, Akshada Shailesh Rane}
+\IEEEauthorblockA{Department of Computer Science, Virginia Tech, Alexandria, Virginia, USA\\
+\{alvin9840, akshada, jaideepm21, msudip\}@vt.edu}
+}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+ColdCast predicts AI system correctness on unseen tasks using recorded outcomes, item text, and system metadata. We evaluate eleven predictors on 51,751 responses across five held-out benchmark sources. Constant 0.5 achieves the lowest zero-label Brier score (0.2500), motivating a second experiment that tests whether a few deliberately selected labels can improve predictions under source shift. We compare random selection, adaptive uncertainty sampling, and semantic diversity on fixed pools for 122 system--source pairs, using three starting predictors, twelve acquisition trials, and six label budgets. Random selection with metadata reduces Brier score from 0.2474 to 0.1633 at 31 labels. For calibrated fusion, uncertainty sampling increases the weighted Brier area under the learning curve (ALC) from 0.20074 to 0.20617. Diversity selection slightly improves metadata ALC under equal pair weighting, but the gain reverses when sources receive equal weight. Limited-label adaptation improves prediction on these pools, with random selection providing a strong reference for future evaluation.
+\end{abstract}
+\begin{IEEEkeywords}
+Predictive AI evaluation, cold start, calibration, semantic representations, limited-label adaptation.
+\end{IEEEkeywords}
+
+\section{Introduction and Motivation}
+Evaluating AI systems across many benchmark items can require substantial inference resources. Aggregate accuracy also conceals variation in item difficulty and system capabilities. Predictive evaluation instead estimates correctness probabilities from historical measurements, item content, and system metadata. The target is $\hat p_{s,i}=P(y_{s,i}=1\mid s,i)$, where $y_{s,i}$ is a recorded binary outcome. Such predictions are useful only if they generalize beyond the benchmarks supplying training labels.
+
+ColdCast combines semantic item representations, system metadata, retrieval, and revealed labels. The study first evaluates the frozen encoder, baselines, neural fusion, retrieval, and calibration. It then measures how the same predictors respond to newly revealed labels and whether deliberate selection improves on random acquisition. The reported experiments use recorded measurement-db outcomes \cite{measurement}. Synthetic examples are used to test the software.
+
+The research question is whether semantic prediction and deliberate selection of a small number of labels reduce error on previously unseen benchmark sources. We distinguish this from predicting new items within familiar sources. The distinction matters empirically: methods that perform well in the latter setting fail to outperform an uninformative probability of 0.5 in the former.
+
+The Stanford AIMS competition motivates the task \cite{aims}, but this study is an offline pilot rather than an official submission. Its zero-label source-held-out score and its local adaptation score use different populations and aggregation rules. Neither is presented as an official leaderboard result.
+
+\section{Related Work and Study Contribution}
+Amortized evaluation learns to predict measurements rather than repeatedly executing a target system. Truong et al. investigate reliable and efficient model-based evaluation \cite{truong2025}. Zhuang et al. connect AI evaluation with principles from human testing \cite{zhuang2023}. Item Response Theory (IRT) models system ability and item difficulty, providing a useful conceptual foundation, but its assumptions require scrutiny for AI evaluation \cite{jiang2026}. Contextual multidimensional IRT incorporates item information to address unseen questions \cite{shang2026}.
+
+The source holdout experiments compare metadata, text, retrieval, fusion, and calibration. The subsequent acquisition experiments freeze the fitted predictors and test probability-based and embedding-based selection against repeated random selection.
+
+\section{Dataset Construction and Audit}
+\subsection{Versioned, Bounded Acquisition}
+With approved access, we downloaded 37 metadata and tabular files (122.1 MB) from six collections, avoiding the full approximately 760-GB repository. The dataset revision is pinned to \texttt{54074453da7b}; the complete revision and per-file SHA-256 hashes are retained in the download manifest. Raw archives, execution traces, and image assets were not downloaded.
+
+Five sources supply eligible binary responses: MathArena, Multi-SWE-bench, REAL web agents, ResearchCodeBench, and SWE-rebench. MMDocRAG was inspected and excluded because its fractional, multidimensional judge scores do not match binary correctness. MathArena additionally requires an explicitly binary grading scale: selecting only outcomes numerically equal to zero or one from a partial-credit rubric would produce an invalid binary subset. Items requiring unavailable image assets are excluded.
+
+\begin{table}[t]
+\caption{Selected real-data pilot. Groups denote distinct normalized item texts; systems denote evaluated configurations.}
+\label{tab:data}\centering\small\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Source & Responses & Groups & Systems & Correct \\
+\midrule
+MathArena & 29,007 & 300 & 92 & 66.47\% \\
+Multi-SWE-bench & 8,327 & 300 & 82 & 14.12\% \\
+REAL web agents & 4,449 & 233 & 33 & 35.76\% \\
+ResearchCodeBench & 6,784 & 212 & 31 & 36.13\% \\
+SWE-rebench & 3,184 & 300 & 1 & 48.27\% \\
+\midrule
+Total & 51,751 & 1,345 & --- & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Sampling and Feature Eligibility}
+Before model fitting, seed 5814 selects at most 300 normalized-text groups per source. Normalization lowercases text and collapses whitespace. All responses associated with a selected group are retained, including repeated trials and item identifiers that alias the same content. The resulting 1,412 item identifiers correspond to 1,345 text groups (Table~\ref{tab:data}). This preserves observed stochastic outcomes but means response-rich groups contribute more observations within a system's score.
+
+Only pre-response item text and input metadata are eligible features. Reference answers, grading explanations, generated responses, and execution traces are excluded. System identity combines subject identity with run conditions rather than relying on a model's display name. Available metadata fields are normalized model name, provider, harness, reasoning effort, harness version, and system key. Missing values and unseen categories receive explicit fallback representations; approximately 37.3\% of selected MathArena responses lack provider metadata.
+
+\subsection{Overlap and Coverage Checks}
+Exact normalized text cannot cross evaluation partitions. Cross-source exact duplicates would be removed conservatively; none were found in this pilot. A frozen-embedding similarity audit found no cross-source pair with cosine similarity at least 0.98; the largest observed similarity was approximately 0.621. This is a diagnostic, not proof of independence: shared templates, paper families, related tasks, or paraphrases can escape these checks.
+
+System coverage and success rates vary substantially (Table~\ref{tab:data}), making source shift central to interpretation. Raw data and model caches remain local; only code and aggregate results are intended for publication.
+
+\section{Implemented Predictors}
+\subsection{Statistical and Single-Modality Baselines}
+The comparison includes constant 0.5, the global training correctness rate, and a smoothed per-system rate. For training successes $k_s$ and observations $n_s$, the latter is
+\begin{equation}
+\hat p_s=\frac{k_s+10\bar y_{\mathrm{train}}}{n_s+10}.
+\end{equation}
+An unseen system falls back to the global training rate. Metadata logistic regression uses training-fitted one-hot categories. TF--IDF logistic regression uses unigrams, a maximum vocabulary of 4,096, minimum document frequency two, and sublinear term frequency. Its vocabulary and inverse document frequencies are fitted on unique training items. Semantic logistic regression uses the frozen item embedding. All logistic models use $C=1$ and at most 500 solver iterations.
+
+\subsection{Frozen Semantic Encoder and Fusion}
+The item encoder is \texttt{all-MiniLM-L6-v2}, pinned to model revision \texttt{1110a243fdf4}; its complete identifier is saved with the run. Masked mean pooling followed by $L_2$ normalization produces 384-dimensional vectors. Inputs are limited to 256 tokens including special tokens. For longer inputs, the first 127 and last 127 content tokens are retained. This affects 602 of 1,345 groups; the median original length is 203 tokens and the longest is 54,192. Long coding and research tasks can therefore lose important context.
+
+The fusion network concatenates the item vector with six learned eight-dimensional categorical embeddings. Hidden layers contain 64 and 32 ReLU units, with dropout 0.15 and a scalar output logit. Training randomly masks categories with probability 0.1 to exercise unknown-category behavior. The encoder remains frozen throughout; no target AI system is executed to generate new labels.
+
+
+\subsection{Retrieval and Probability Calibration}
+Retrieval uses the ten nearest training text groups by cosine similarity. Each neighbor correctness rate is weighted by $\exp((s_i-s_{\max})/0.15)$, where $s_i$ is cosine similarity and $s_{\max}$ is the largest retrieved similarity. A global training-rate prior has weight one. A training query excludes its own text group from its neighbors. This exclusion does not remove that group's contribution to the global training prior. Evaluation retrieval never uses development, calibration, or test outcomes. The resulting scalar is either a standalone prediction or an additional fusion input.
+
+After fitting the network, temperature scaling transforms its logit $\ell$ into $\sigma(\ell/T)$. An independent calibration source selects among 81 log-spaced temperatures from 0.2 to 5 by response-weighted log loss. Both calibrated and uncalibrated variants are retained because calibration on one source need not transfer to another. The acquisition comparison uses frozen predictors and adjusts their outputs only through the scalar offset.
+
+\section{Experimental Protocol and Reproducibility}
+\subsection{Primary Source-Held-Out Evaluation}
+Five folds hold out each source once. Sources are ordered as MathArena, Multi-SWE-bench, REAL web agents, ResearchCodeBench, and SWE-rebench. For each test source, the next source cyclically is development, the next is calibration, and the remaining two supply training data. Thus no source or normalized text group crosses roles within a fold. Training learns weights and category vocabularies; development selects the epoch; calibration selects temperature; test labels supply zero-label scoring and the explicitly separated acquisition and evaluation pools described below.
+
+This protocol also introduces system cold starts. All test system configurations are unseen in training for four sources; for ResearchCodeBench, the unseen-configuration response fraction is approximately 56.2\%. Canonical model names can recur across configurations, so configuration holdout is not equivalent to holding out every model family. This distinction limits claims about generalization to entirely new foundation models.
+
+\subsection{Secondary Item-Held-Out Diagnostic}
+Within each source, normalized-text groups are divided approximately 60/15/10/15\% into training, development, calibration, and test. The resulting response counts are 31,703, 7,796, 5,009, and 7,243. Every test system and canonical model is represented in training. This measures new-item prediction with familiar systems. Different test populations and aggregation make the gap from source holdout descriptive, not a controlled estimate of shift cost.
+
+\subsection{Training, Metrics, and Uncertainty}
+Neural models use AdamW, learning rate 0.001, weight decay $10^{-4}$, batches of 1,024, and at most 40 epochs. Early stopping has patience seven and selects development macro Brier score. Seeds 5814, 5815, and 5816 vary neural initialization and training randomness; the data sampling and evaluation partitions remain fixed. Configurations are not retuned using test scores.
+
+For a set of responses, Brier score is
+\begin{equation}
+B=\frac{1}{N}\sum_{j=1}^{N}(\hat p_j-y_j)^2.
+\end{equation}
+The primary metric first averages within each test system, then equally across systems in a source, then equally across five held-out sources. Neural results average these scores over three seeds. The item diagnostic averages equally across system--source pairs. Log loss and ten-bin, equal-width reliability diagnostics provide additional checks; pooled expected calibration error (ECE) is not a substitute for predictive performance.
+
+Paired uncertainty intervals resample the five source clusters 5,000 times after averaging seeds. With only five clusters, these intervals are descriptive and unstable. Seed standard deviations capture optimization variation, not uncertainty from dataset selection, unseen benchmarks, or acquisition order.
+
+\subsection{Executable Evidence}
+The predictor pipeline saves data hashes, split audits, configurations, per-source metrics, predictions, trained weights, and an environment lock. Seventeen automated tests pass across the original software fixture, real-data pipeline, and adaptation checks. All saved probabilities lie in the valid interval.
+
+A separate offline inference check reloads saved fusion weights and independently encodes the input. It reproduces the stored prediction to an absolute difference of approximately $3.9\times10^{-8}$. Execution used local CPU resources and historical labels; the official competition interface remains untested.
+
+\section{Results and Interpretation}
+\subsection{Zero-Label Prediction}
+\begin{table}[t]
+\caption{Real-data Brier scores (lower is better). Item holdout and source holdout use different test populations and weighting. Neural values average three seeds.}
+\label{tab:results}\centering\small
+\begin{tabular}{@{}lrr@{}}
+\toprule
+Predictor & Item holdout & Source holdout \\
+\midrule
+Constant 0.5 & 0.2500 & \textbf{0.2500} \\
+Global rate & 0.2486 & 0.2850 \\
+Smoothed system rate & 0.1799 & 0.2825 \\
+Metadata logistic & \textbf{0.1794} & 0.2699 \\
+TF--IDF logistic & 0.2110 & 0.2825 \\
+Semantic logistic & 0.2018 & 0.3335 \\
+Retrieval only & 0.1910 & 0.2822 \\
+Fusion & 0.1900 & 0.2738 \\
+Fusion + temperature & 0.1887 & 0.2819 \\
+Fusion + retrieval & 0.1884 & 0.2730 \\
+Fusion + retrieval + temp. & 0.1886 & 0.2778 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Metadata logistic regression is strongest on the secondary item split, with Brier 0.1794. The smoothed system rate is nearly as good at 0.1799, indicating that known-system history supplies substantial predictive information. Neither fusion variant improves upon these simple baselines. Semantic logistic regression improves on constant 0.5 within sources, but transfers poorly across sources.
+
+On the primary protocol, every learned predictor is worse than constant 0.5 (Fig.~\ref{fig:comparison}). Fusion obtains 0.2738, retrieval-enhanced fusion 0.2730, and metadata logistic regression 0.2699. The result does not support the proposed neural advantage. Differences in source success rates, limited training-source diversity, unknown system configurations, and text truncation are plausible contributors, but the current experiment does not isolate their causal effects.
+
+Fusion's source-held-out seed standard deviation is 0.0049; adding retrieval yields 0.0023. Relative to the smoothed system baseline, fusion's mean Brier difference is $-0.0087$, with a paired source-bootstrap interval approximately $[-0.0261,0.0062]$. Retrieval-enhanced fusion has difference $-0.0095$ and interval $[-0.0294,0.0080]$. Both include zero, so even superiority over that weaker baseline is not established.
+
+\begin{figure}[t]
+\centering
+{\scriptsize\setlength{\unitlength}{1pt}
+\begin{picture}(246,116)
+{\color{gray!32}\put(86.00,39.00){\linethickness{0.25pt}\line(0,1){71}}}
+\put(86.00,33.00){\makebox(0,0)[c]{0.15}}
+{\color{gray!32}\put(123.50,39.00){\linethickness{0.25pt}\line(0,1){71}}}
+\put(123.50,33.00){\makebox(0,0)[c]{0.20}}
+{\color{gray!32}\put(161.00,39.00){\linethickness{0.25pt}\line(0,1){71}}}
+\put(161.00,33.00){\makebox(0,0)[c]{0.25}}
+{\color{gray!32}\put(198.50,39.00){\linethickness{0.25pt}\line(0,1){71}}}
+\put(198.50,33.00){\makebox(0,0)[c]{0.30}}
+{\color{gray!32}\put(236.00,39.00){\linethickness{0.25pt}\line(0,1){71}}}
+\put(236.00,33.00){\makebox(0,0)[c]{0.35}}
+\put(86.00,39.00){\linethickness{0.25pt}\line(1,0){150}}
+\put(163.00,21.00){\makebox(0,0)[c]{Brier score (lower is better)}}
+\put(81.00,103.00){\makebox(0,0)[r]{Constant}}
+\put(81.00,89.00){\makebox(0,0)[r]{Metadata}}
+\put(81.00,75.00){\makebox(0,0)[r]{Semantic}}
+\put(81.00,61.00){\makebox(0,0)[r]{Fusion}}
+\put(81.00,47.00){\makebox(0,0)[r]{Fusion + retrieval}}
+\put(88.00,8.00){\makebox(0,0)[l]{\textcolor{coldblue}{\textbf{o}} Item holdout}}
+\put(161.00,105.00){\makebox(0,0)[c]{\textcolor{coldblue}{\textbf{o}}}}
+\put(108.03,91.00){\makebox(0,0)[c]{\textcolor{coldblue}{\textbf{o}}}}
+\put(124.84,77.00){\makebox(0,0)[c]{\textcolor{coldblue}{\textbf{o}}}}
+\put(115.99,63.00){\makebox(0,0)[c]{\textcolor{coldblue}{\textbf{o}}}}
+\put(114.77,49.00){\makebox(0,0)[c]{\textcolor{coldblue}{\textbf{o}}}}
+\put(165.00,8.00){\makebox(0,0)[l]{\textcolor{coldorange}{\rule{3pt}{3pt}} Source holdout}}
+\put(161.00,101.00){\makebox(0,0)[c]{\textcolor{coldorange}{\rule{3pt}{3pt}}}}
+\put(175.90,87.00){\makebox(0,0)[c]{\textcolor{coldorange}{\rule{3pt}{3pt}}}}
+\put(223.62,73.00){\makebox(0,0)[c]{\textcolor{coldorange}{\rule{3pt}{3pt}}}}
+\put(178.88,59.00){\makebox(0,0)[c]{\textcolor{coldorange}{\rule{3pt}{3pt}}}}
+\put(178.25,45.00){\makebox(0,0)[c]{\textcolor{coldorange}{\rule{3pt}{3pt}}}}
+\end{picture}}
+\caption{Selected zero-label predictors. The markers compare scores on a common horizontal scale. Source holdout reverses the apparent benefit over constant 0.5. Protocols differ in population and weighting; Table~\ref{tab:results} reports all predictors.}
+\label{fig:comparison}
+\end{figure}
+
+\subsection{Calibration Under Source Shift}
+Temperature scaling improves fusion slightly on the item diagnostic (0.1900 to 0.1887), but worsens source-held-out Brier (0.2738 to 0.2819). Source-held-out fusion log loss is approximately 0.7524 and increases to 0.7759 after scaling; constant 0.5 gives 0.6931. Calibration labels from a different source therefore do not ensure better probability estimates on the test source.
+
+Pooled ECE must also be interpreted carefully. The constant predictor has item-held-out ECE approximately 0.0017 because pooled correctness is close to one half, despite providing no item-level discrimination. Reliability plots are retained as diagnostics, while proper scoring rules and source-level breakdowns drive comparison.
+
+\subsection{Limited-Label Adaptation}
+The initial random-acquisition experiment includes 122 system--source pairs with at least 80 distinct text groups: 20 MathArena, 44 Multi-SWE-bench, 26 REAL, 31 ResearchCodeBench, and one SWE-rebench pair. Each pair receives a deterministic random 50/50 acquisition/evaluation split. Nested budgets $\{0,1,3,7,15,31\}$ reveal one sampled recorded response per selected acquisition group. Evaluation groups remain fixed and disjoint at every budget.
+
+Given the base logit $\ell_i$, adaptation fits a scalar offset $\delta$ using acquired labels:
+\begin{equation}
+\min_{-5\leq\delta\leq5}\;\sum_{i\in A_b}\mathrm{BCE}\big(y_i,\sigma(\ell_i+\delta)\big)+\tfrac12\delta^2.
+\end{equation}
+At zero labels, $\delta=0$. The unit Gaussian prior regularizes small-budget updates. This correction changes the system--source success level without learning a new item representation.
+
+\begin{table}[t]
+\caption{Local adaptation on 122 eligible pairs. Brier at budgets 0 and 31 and weighted Brier ALC are pair-macro averages; lower is better. These are not official competition scores.}
+\label{tab:adapt}\centering\small
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Base predictor & 0 labels & 31 labels & ALC \\
+\midrule
+Metadata logistic & 0.2474 & \textbf{0.1629} & \textbf{0.1948} \\
+Constant 0.5 & 0.2500 & 0.1634 & 0.1950 \\
+Fusion + temperature & 0.2706 & 0.1635 & 0.2017 \\
+Fusion + retrieval + temp. & 0.2707 & 0.1634 & 0.2017 \\
+Fusion & 0.2908 & 0.1644 & 0.2082 \\
+Smoothed system rate & 0.3062 & 0.1638 & 0.2124 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Following the competition-inspired budget schedule \cite{aims}, local ALC weights budget scores by $(0.1,0.2,0.2,0.2,0.2,0.1)$. This experiment averages eligible system--source pairs equally, rather than weighting sources equally as in the primary zero-label table. Consequently, its zero-label values are not directly comparable to Table~\ref{tab:results}.
+
+Adaptation lowers error for every evaluated base predictor (Table~\ref{tab:adapt}; Fig.~\ref{fig:adaptation}). Metadata logistic regression falls from 0.2474 to 0.1629, but adapting constant 0.5 nearly matches it. Their ALC difference is only about 0.00017 and is not evidence of a meaningful advantage. A simple label-based correction captures most of the observed benefit; a complex zero-label representation is not necessary for this pilot's adaptation gains. The pilot uses one acquisition trajectory per pair. Section~\ref{sec:label_selection} measures variability over multiple acquisition trials.
+
+\begin{figure}[t]
+\centering
+{\scriptsize\setlength{\unitlength}{1pt}
+\begin{picture}(246,126)
+\put(36.00,120.00){\makebox(0,0)[l]{Pair-macro Brier}}
+{\color{gray!32}\put(36.00,42.69){\linethickness{0.25pt}\line(1,0){198}}}
+\put(31.00,42.69){\makebox(0,0)[r]{0.16}}
+{\color{gray!32}\put(36.00,65.46){\linethickness{0.25pt}\line(1,0){198}}}
+\put(31.00,65.46){\makebox(0,0)[r]{0.20}}
+{\color{gray!32}\put(36.00,88.23){\linethickness{0.25pt}\line(1,0){198}}}
+\put(31.00,88.23){\makebox(0,0)[r]{0.24}}
+{\color{gray!32}\put(36.00,111.00){\linethickness{0.25pt}\line(1,0){198}}}
+\put(31.00,111.00){\makebox(0,0)[r]{0.28}}
+\put(36.00,37.00){\linethickness{0.25pt}\line(1,0){198}}
+\put(36.00,37.00){\linethickness{0.25pt}\line(0,1){74}}
+\put(36.00,31.00){\makebox(0,0)[c]{0}}
+\put(75.60,31.00){\makebox(0,0)[c]{1}}
+\put(115.20,31.00){\makebox(0,0)[c]{3}}
+\put(154.80,31.00){\makebox(0,0)[c]{7}}
+\put(194.40,31.00){\makebox(0,0)[c]{15}}
+\put(234.00,31.00){\makebox(0,0)[c]{31}}
+\put(135.00,22.00){\makebox(0,0)[c]{Acquired labels (budget steps)}}
+{\color{black}\linethickness{0.55pt}
+\qbezier(36.00,93.92)(55.80,85.57)(75.60,77.22)
+\qbezier(75.60,77.22)(95.40,70.11)(115.20,63.00)
+\qbezier(115.20,63.00)(135.00,58.82)(154.80,54.64)
+\qbezier(154.80,54.64)(174.60,51.77)(194.40,48.90)
+\qbezier(194.40,48.90)(214.20,46.77)(234.00,44.64)
+\put(36.00,93.92){\makebox(0,0)[c]{\textbf{o}}}
+\put(75.60,77.22){\makebox(0,0)[c]{\textbf{o}}}
+\put(115.20,63.00){\makebox(0,0)[c]{\textbf{o}}}
+\put(154.80,54.64){\makebox(0,0)[c]{\textbf{o}}}
+\put(194.40,48.90){\makebox(0,0)[c]{\textbf{o}}}
+\put(234.00,44.64){\makebox(0,0)[c]{\textbf{o}}}
+}
+\put(43.00,12.00){\makebox(0,0)[l]{\textcolor{black}{\textbf{o}} Constant 0.5}}
+{\color{coldblue}\linethickness{0.55pt}
+\qbezier(36.00,92.42)(55.80,85.40)(75.60,78.37)
+\qbezier(75.60,78.37)(95.40,70.97)(115.20,63.58)
+\qbezier(115.20,63.58)(135.00,58.70)(154.80,53.83)
+\qbezier(154.80,53.83)(174.60,51.10)(194.40,48.38)
+\qbezier(194.40,48.38)(214.20,46.36)(234.00,44.35)
+\put(36.00,92.42){\makebox(0,0)[c]{\rule{3pt}{3pt}}}
+\put(75.60,78.37){\makebox(0,0)[c]{\rule{3pt}{3pt}}}
+\put(115.20,63.58){\makebox(0,0)[c]{\rule{3pt}{3pt}}}
+\put(154.80,53.83){\makebox(0,0)[c]{\rule{3pt}{3pt}}}
+\put(194.40,48.38){\makebox(0,0)[c]{\rule{3pt}{3pt}}}
+\put(234.00,44.35){\makebox(0,0)[c]{\rule{3pt}{3pt}}}
+}
+\put(144.00,12.00){\makebox(0,0)[l]{\textcolor{coldblue}{\rule{3pt}{3pt}} Metadata}}
+{\color{coldorange}\linethickness{0.55pt}
+\qbezier(36.00,105.64)(55.80,95.31)(75.60,84.98)
+\qbezier(75.60,84.98)(95.40,75.93)(115.20,66.88)
+\qbezier(115.20,66.88)(135.00,61.37)(154.80,55.86)
+\qbezier(154.80,55.86)(174.60,52.50)(194.40,49.14)
+\qbezier(194.40,49.14)(214.20,46.90)(234.00,44.66)
+\put(36.00,105.64){\makebox(0,0)[c]{\textbf{+}}}
+\put(75.60,84.98){\makebox(0,0)[c]{\textbf{+}}}
+\put(115.20,66.88){\makebox(0,0)[c]{\textbf{+}}}
+\put(154.80,55.86){\makebox(0,0)[c]{\textbf{+}}}
+\put(194.40,49.14){\makebox(0,0)[c]{\textbf{+}}}
+\put(234.00,44.66){\makebox(0,0)[c]{\textbf{+}}}
+}
+\put(43.00,2.00){\makebox(0,0)[l]{\textcolor{coldorange}{\textbf{+}} Fusion + temperature}}
+\end{picture}}
+\caption{Random-acquisition adaptation on 122 pairs with disjoint, fixed evaluation groups. Budget steps are equally spaced; values average three seeds with one shared acquisition trajectory per pair. Curves nearly converge at 31 labels. Acquisition-order uncertainty is not estimated.}
+\label{fig:adaptation}
+\end{figure}
+
+\section{Label Selection on Unseen Sources}
+\label{sec:label_selection}
+\subsection{Research Design and Fixed Inputs}
+The random-acquisition experiment shows that revealed outcomes can correct a system's mean prediction after source shift. To measure the added value of choosing which labels to reveal, we compare policies on the same acquisition pool, evaluation pool, and adaptation rule. The experimental question is whether a policy improves prediction error at the same label budget. The main comparison is weighted Brier ALC. Scores at 1, 3, and 7 labels show whether the policy helps before most of the label budget is spent.
+
+The experiment reuses the held-out predictions and embeddings from the source holdout runs. It preserves the normalized-text splits for all 122 pairs in the initial acquisition experiment. Each acquisition group has one previously selected recorded outcome, and every evaluation group retains its recorded responses. All policies receive the same outcome when they select a given group. This controls the effects of choosing different groups separately from the effects of which repeated response is revealed. Pair membership, evaluation labels, and evaluation group counts remain fixed across policies, trials, budgets, and predictors.
+
+The three starting predictors are constant 0.5, metadata logistic regression, and temperature-scaled neural fusion. Constant and metadata predictions test whether a strong adaptation baseline needs item-specific probabilities. Fusion supplies item-dependent scores and enables uncertainty ranking. The selection of these three predictors spans a constant prior, a system-informed prior, and a model that combines item text with system metadata. The experiment does not train new predictors or retune their parameters using the held-out pools.
+
+\subsection{Acquisition Policies}
+\textbf{Random.} For each pair and trial, a seeded permutation gives the order in which labels are revealed. Its first $b$ groups form the acquired set at budget $b$. This gives a policy with no assumptions about model calibration or embedding geometry.
+
+\textbf{Uncertainty.} Let $\ell_i$ be the base logit for candidate group $i$ and $\delta_b$ the offset fitted to the first $b$ labels. The next group is
+\begin{equation}
+i_{b+1}=\arg\min_{i\in U_b}|\ell_i+\delta_b|,
+\end{equation}
+where $U_b$ contains the unrevealed acquisition groups. This is equivalent to selecting the predicted probability closest to 0.5. The offset is recomputed after each reveal. Near ties within $10^{-7}$ in absolute logit distance follow the paired random permutation. Thus a constant prediction across a pool gives random selection under this rule. Near-boundary examples can be informative about a logistic intercept, but a miscalibrated model can place the decision boundary in an unrepresentative region.
+
+\textbf{Diversity.} Start with the first item in the paired random permutation. With normalized embeddings $\mathbf{v}_i$, subsequent groups maximize their minimum cosine distance to an already selected group:
+\begin{equation}
+i_{b+1}=\arg\max_{i\in U_b}\min_{j\in A_b}
+(1-\mathbf{v}_i^\top\mathbf{v}_j).
+\end{equation}
+This favors coverage of the item embedding space. The order is shared across starting predictors within each pair and trial. The method assumes that semantic coverage is relevant to the residual correctness rate. Selecting semantic extremes can violate that assumption when such items are atypical of the scored responses.
+
+\begin{table*}[t]
+\caption{Pair-macro Brier by number of revealed labels. ALC is a weighted average over the six budgets. SD is the standard deviation of aggregate ALC across 12 acquisition trials. Lower is better.}
+\label{tab:label_budgets}
+\centering\small
+\begin{tabular}{@{}llrrrrrrrr@{}}
+\toprule
+Starting predictor & Policy & 0 & 1 & 3 & 7 & 15 & 31 & ALC & SD \\
+\midrule
+Constant 0.5 & Random & 0.2500 & 0.2217 & 0.1965 & 0.1785 & 0.1688 & 0.1637 & 0.19446 & 0.00195 \\
+Constant 0.5 & Uncertainty & 0.2500 & 0.2217 & 0.1965 & 0.1785 & 0.1688 & 0.1637 & 0.19446 & 0.00195 \\
+Constant 0.5 & Diversity & 0.2500 & 0.2217 & 0.1950 & 0.1792 & 0.1701 & 0.1643 & 0.19463 & 0.00166 \\
+\addlinespace[2pt]
+Metadata & Random & 0.2474 & 0.2193 & 0.1943 & 0.1774 & 0.1681 & 0.1633 & 0.19288 & 0.00152 \\
+Metadata & Uncertainty & 0.2474 & 0.2193 & 0.1943 & 0.1774 & 0.1681 & 0.1633 & 0.19288 & 0.00152 \\
+Metadata & Diversity & 0.2474 & 0.2193 & 0.1933 & 0.1764 & 0.1683 & 0.1637 & 0.19259 & 0.00128 \\
+\addlinespace[2pt]
+Calibrated fusion & Random & 0.2706 & 0.2342 & 0.2024 & 0.1805 & 0.1693 & 0.1638 & 0.20074 & 0.00217 \\
+Calibrated fusion & Uncertainty & 0.2706 & 0.2405 & 0.2142 & 0.1891 & 0.1699 & 0.1638 & 0.20617 & 0.00030 \\
+Calibrated fusion & Diversity & 0.2706 & 0.2342 & 0.2006 & 0.1808 & 0.1706 & 0.1645 & 0.20077 & 0.00169 \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\subsection{Scoring, Verification, and Sources of Variation}
+All policies reveal one outcome at a time. Evaluation occurs at the nested budgets $0,1,3,7,15,31$ using the unit-Gaussian penalty from the initial adaptation experiment. At nonzero budgets, the offset is found by solving the derivative of the convex objective in double precision, subject to the original bounds. At zero labels the stored base probabilities are used directly. Acquisition may use text embeddings, frozen model scores, and already revealed acquisition outcomes. Evaluation outcomes enter only the scoring step.
+
+The design crosses three training seeds with twelve acquisition seeds (6200--6211), using the same seed for the random order and policy tie breaking within each pair. Training seeds change the neural model. The constant and metadata predictions repeat across training seeds, so these repeats do not add independent evidence. We compute response-level Brier within each pair and average pair scores equally. The weighted area under the learning curve (ALC) is $\sum_b w_b B_b$, using the weights defined in the initial adaptation experiment. Trial standard deviation describes the variation of this aggregate when the order changes. It does not measure generalization uncertainty.
+
+Because the number of pairs varies by source, we also compute within-source ALC and average the five source-level differences equally. A leave-one-source-out sensitivity check recomputes this equal-source contrast after omitting each source from aggregation. It does not retrain any predictor. The comparison is paired because each difference uses the same inputs, fixed outcomes, and evaluation groups.
+
+The run checks that each acquisition order contains 31 distinct groups, that every policy gives the same zero-budget score for a given pair and model, and that all 237,168 scores are finite and valid. Replaying the original order with the original numerical solver recovers the original random-acquisition scores. Substituting the double-precision solver changes a replayed pair-budget score by at most $5.3\times 10^{-5}$. This isolates the numerical change from the new acquisition policies.
+
+
+\subsection{Results at Fixed Label Budgets}
+Table~\ref{tab:label_budgets} reports all nine predictor--policy combinations. Starting from constant 0.5, random selection reaches Brier 0.1965 after three labels and 0.1637 after 31. Metadata with random acquisition starts at 0.2474, reaches 0.1943 after three labels, and ends at 0.1633. These reductions are far larger than the difference between random and diversity at the same budget. At 31 labels the nine scores lie between 0.1633 and 0.1645. Similar endpoint performance can hide different behavior at the smaller budgets.
+
+Calibrated fusion is particularly sensitive to policy at the start of the curve (Fig.~\ref{fig:policy_curves}). Uncertainty sampling increases its Brier score at three labels from 0.2024 to 0.2142. Its ALC increases by 0.00543 relative to random selection. At 31 labels the two scores agree to four decimal places. The standard deviation across trials is smaller for uncertainty (0.00030 ALC) than random selection (0.00217 ALC). In this comparison a more reproducible order can still have a higher mean error.
+
+For both non-neural predictors, every acquisition pool has flat logits within the tie tolerance, so the uncertainty policy reduces exactly to the paired random order. Under fusion, uncertainty and random differ in all 4,392 pair--seed--trial comparisons of full 31-label orders. The uncertainty policy therefore makes different selections when item-specific logits are available. Its effect could arise if the groups near the shifted model's decision boundary have correctness rates unlike the scored items. The comparison measures that policy's performance without isolating the cause of the penalty.
+
+Diversity is slightly ahead of random for metadata under equal pair weighting (ALC difference $-0.00030$). Its pair-weighted difference for fusion is $+0.00003$. Diversity and random share the same first selection by design. Differences after the first budget reflect subsequent selections. For metadata, the advantage is concentrated around three and seven labels. It does not extend to the 31-label endpoint.
+
+\subsection{Source-Level Sensitivity}
+The fusion results vary substantially by benchmark (Table~\ref{tab:policy_by_source}). Uncertainty is most costly on MathArena, with a $+0.0200$ ALC change. It slightly improves on REAL web agents, ResearchCodeBench, and the single SWE-rebench pair. The average change is $+0.00403$ with equal source weights. Omitting MathArena reduces the equal-source penalty to about $+0.00004$. This indicates that the mean penalty is sensitive to one source despite having the same sign across the five leave-one-source-out summaries.
+
+Metadata diversity changes from a $-0.00030$ difference under pair weighting to $+0.00249$ under equal source weighting. The leave-one-source-out differences range from $-0.00078$ to $+0.00442$. The only SWE-rebench pair has a large positive diversity difference and receives one fifth of the weight in the equal-source mean. Pair weighting better describes the average eligible pair in this pilot. Equal-source weighting better exposes the effect of source imbalance. The difference between the two summaries motivates evaluation on additional sources.
+
+\subsection{Operational Choice}
+A strong reference for subsequent work is a metadata prior with random labels and the same scalar correction. It is inexpensive, improves at small budgets, and avoids using an item ranking whose behavior under source shift is uncertain. The adapted constant offers a fallback when model metadata are sparse. Semantic diversity may still help on particular sources or with an update that learns item-dependent effects, but the current measurements do not establish a reliable aggregate gain.
+
+\begin{figure}[t]
+\centering
+{\scriptsize\setlength{\unitlength}{1pt}
+\begin{picture}(246,126)
+\put(36.00,120.00){\makebox(0,0)[l]{Pair-macro Brier}}
+{\color{gray!32}\put(36.00,42.69){\linethickness{0.25pt}\line(1,0){198}}}
+\put(31.00,42.69){\makebox(0,0)[r]{0.16}}
+{\color{gray!32}\put(36.00,65.46){\linethickness{0.25pt}\line(1,0){198}}}
+\put(31.00,65.46){\makebox(0,0)[r]{0.20}}
+{\color{gray!32}\put(36.00,88.23){\linethickness{0.25pt}\line(1,0){198}}}
+\put(31.00,88.23){\makebox(0,0)[r]{0.24}}
+{\color{gray!32}\put(36.00,111.00){\linethickness{0.25pt}\line(1,0){198}}}
+\put(31.00,111.00){\makebox(0,0)[r]{0.28}}
+\put(36.00,37.00){\linethickness{0.25pt}\line(1,0){198}}
+\put(36.00,37.00){\linethickness{0.25pt}\line(0,1){74}}
+\put(36.00,31.00){\makebox(0,0)[c]{0}}
+\put(75.60,31.00){\makebox(0,0)[c]{1}}
+\put(115.20,31.00){\makebox(0,0)[c]{3}}
+\put(154.80,31.00){\makebox(0,0)[c]{7}}
+\put(194.40,31.00){\makebox(0,0)[c]{15}}
+\put(234.00,31.00){\makebox(0,0)[c]{31}}
+\put(135.00,22.00){\makebox(0,0)[c]{Acquired labels (budget steps)}}
+{\color{black}\linethickness{0.55pt}
+\qbezier(36.00,105.64)(55.80,95.30)(75.60,84.96)
+\qbezier(75.60,84.96)(95.40,75.90)(115.20,66.85)
+\qbezier(115.20,66.85)(135.00,60.61)(154.80,54.37)
+\qbezier(154.80,54.37)(174.60,51.19)(194.40,48.00)
+\qbezier(194.40,48.00)(214.20,46.42)(234.00,44.84)
+\put(36.00,105.64){\makebox(0,0)[c]{\textbf{o}}}
+\put(75.60,84.96){\makebox(0,0)[c]{\textbf{o}}}
+\put(115.20,66.85){\makebox(0,0)[c]{\textbf{o}}}
+\put(154.80,54.37){\makebox(0,0)[c]{\textbf{o}}}
+\put(194.40,48.00){\makebox(0,0)[c]{\textbf{o}}}
+\put(234.00,44.84){\makebox(0,0)[c]{\textbf{o}}}
+}
+\put(43.00,12.00){\makebox(0,0)[l]{\textcolor{black}{\textbf{o}} Fusion: random}}
+{\color{coldblue}\linethickness{0.55pt}
+\qbezier(36.00,105.64)(55.80,97.08)(75.60,88.51)
+\qbezier(75.60,88.51)(95.40,81.02)(115.20,73.52)
+\qbezier(115.20,73.52)(135.00,66.38)(154.80,59.25)
+\qbezier(154.80,59.25)(174.60,53.80)(194.40,48.35)
+\qbezier(194.40,48.35)(214.20,46.60)(234.00,44.84)
+\put(36.00,105.64){\makebox(0,0)[c]{\rule{3pt}{3pt}}}
+\put(75.60,88.51){\makebox(0,0)[c]{\rule{3pt}{3pt}}}
+\put(115.20,73.52){\makebox(0,0)[c]{\rule{3pt}{3pt}}}
+\put(154.80,59.25){\makebox(0,0)[c]{\rule{3pt}{3pt}}}
+\put(194.40,48.35){\makebox(0,0)[c]{\rule{3pt}{3pt}}}
+\put(234.00,44.84){\makebox(0,0)[c]{\rule{3pt}{3pt}}}
+}
+\put(144.00,12.00){\makebox(0,0)[l]{\textcolor{coldblue}{\rule{3pt}{3pt}} Fusion: uncertainty}}
+{\color{coldorange}\linethickness{0.55pt}
+\qbezier(36.00,105.64)(55.80,95.30)(75.60,84.96)
+\qbezier(75.60,84.96)(95.40,75.39)(115.20,65.82)
+\qbezier(115.20,65.82)(135.00,60.19)(154.80,54.55)
+\qbezier(154.80,54.55)(174.60,51.64)(194.40,48.73)
+\qbezier(194.40,48.73)(214.20,46.99)(234.00,45.25)
+\put(36.00,105.64){\makebox(0,0)[c]{\textbf{+}}}
+\put(75.60,84.96){\makebox(0,0)[c]{\textbf{+}}}
+\put(115.20,65.82){\makebox(0,0)[c]{\textbf{+}}}
+\put(154.80,54.55){\makebox(0,0)[c]{\textbf{+}}}
+\put(194.40,48.73){\makebox(0,0)[c]{\textbf{+}}}
+\put(234.00,45.25){\makebox(0,0)[c]{\textbf{+}}}
+}
+\put(43.00,2.00){\makebox(0,0)[l]{\textcolor{coldorange}{\textbf{+}} Fusion: diversity}}
+{\color{gray}\linethickness{0.55pt}
+\qbezier(36.00,92.42)(55.80,84.44)(75.60,76.45)
+\qbezier(75.60,76.45)(95.40,69.34)(115.20,62.23)
+\qbezier(115.20,62.23)(135.00,57.41)(154.80,52.58)
+\qbezier(154.80,52.58)(174.60,49.94)(194.40,47.29)
+\qbezier(194.40,47.29)(214.20,45.93)(234.00,44.56)
+\put(36.00,92.42){\makebox(0,0)[c]{\textbf{x}}}
+\put(75.60,76.45){\makebox(0,0)[c]{\textbf{x}}}
+\put(115.20,62.23){\makebox(0,0)[c]{\textbf{x}}}
+\put(154.80,52.58){\makebox(0,0)[c]{\textbf{x}}}
+\put(194.40,47.29){\makebox(0,0)[c]{\textbf{x}}}
+\put(234.00,44.56){\makebox(0,0)[c]{\textbf{x}}}
+}
+\put(144.00,2.00){\makebox(0,0)[l]{\textcolor{gray}{\textbf{x}} Metadata: random}}
+\end{picture}}
+\caption{Early-budget behavior on fixed evaluation pools. Budget positions are equally spaced. Under fusion, uncertainty selection trails random selection most at three labels. Differences narrow by 31 labels.}
+\label{fig:policy_curves}
+\end{figure}
+\begin{table}[t]
+\caption{Calibrated fusion ALC differences relative to random by held-out source, multiplied by 1,000. Positive values indicate higher error.}
+\label{tab:policy_by_source}\centering\small
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Source & Pairs & Uncertainty & Diversity \\
+\midrule
+MathArena & 20 & +19.98 & -5.05 \\
+Multi-SWE-bench & 44 & +7.94 & -0.10 \\
+REAL web agents & 26 & -2.41 & +4.23 \\
+ResearchCodeBench & 31 & -0.62 & -0.61 \\
+SWE-rebench & 1 & -4.76 & +17.81 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\section{Project Progress and Individual Contributions}
+Completed project artifacts include the versioned real-data pilot, eleven predictors, fixed holdout protocols, the acquisition benchmark, aggregate results, and reproducibility checks. The following progress reflects contributions confirmed by the team.
+
+\textbf{Yi Chen Kuo, data preparation and validation.} Yi Chen worked on verifying binary-outcome eligibility, metadata quality, and benchmark coverage, including checks on the separation of acquisition and evaluation text groups.
+
+\textbf{Jaideep Manupati, predictive modeling and experiments.} Jaideep obtained dataset access, coordinated the study, and worked on the baseline and fusion comparisons, the acquisition experiment setup, and interpretation of Brier scores across budgets and sources.
+
+\textbf{Akshada Shailesh Rane, retrieval and adaptation.} Akshada worked on the scalar update, uncertainty and diversity criteria, and use of revealed labels. Her work also covered interpretation of the learning curves and source-level results.
+
+\textbf{Sudip Manchare, integration and reproducibility.} Sudip worked on the run instructions, consistency checks for numerical outputs and figures, report integration, and the project webpage.
+
+\section{Limitations and Next Steps}
+The policy comparison reuses the same five retrospective benchmark sources as the predictor study. Its conclusions apply to the recorded outcomes and need independent validation before informing future policy selection. Encoder pretraining overlap and variation in label cost or latency remain unmeasured. Repeating acquisition seeds varies order and initial choice while holding the recorded outcome per group fixed. Resampling outcomes for groups with repeated trials would test sensitivity to the specific revealed responses.
+
+Pair weighting gives more influence to sources with more eligible system configurations. Equal-source summaries address this weighting difference but cannot remove the uncertainty caused by a single eligible SWE-rebench pair and a total of five sources. The minimum group count limits the result to pairs with sufficiently large pools. Broader source coverage and a system-family holdout are needed to evaluate transfer across new benchmark and model families.
+
+The scalar correction shifts every logit in a pair equally. It can adjust the overall expected correctness level, but cannot learn an item-dependent correction or improve ranking within the pair. The frozen text encoder also truncates many long items, limiting the coverage signal for diversity. The next evaluation should freeze the current predictors, random acquisition reference, and scoring protocol before selecting new sources. It should compare performance on an independent holdout and vary which recorded responses are revealed where repeated outcomes exist. A reproducible offline prediction and scoring workflow will support the final demonstration. Competition packaging requires separate interface validation.
+
+\section{Conclusion}
+Zero-label prediction remains difficult on unseen sources despite useful within-source models. A small number of revealed outcomes improves probability estimates on the fixed evaluation pools, with the largest policy differences occurring early in the budget. Uncertainty selection worsens calibrated fusion in aggregate. The small diversity gain for metadata under pair weighting reverses under equal source weighting. Repeated random acquisition with a simple prior provides the reference for evaluation on independent sources.
+
+\begin{thebibliography}{00}
+\bibitem{aims} Stanford AI Measurement Science, ``Predictive AI Evaluation Competition,'' 2026. [Online]. Available: \url{https://aims.stanford.edu/competition/}
+\bibitem{truong2025} S. Truong et al., ``Reliable and Efficient Amortized Model-based Evaluation,'' in \textit{Proc. ICML}, 2025.
+\bibitem{zhuang2023} Y. Zhuang et al., ``Position: AI Evaluation Should Learn from How We Test Humans,'' in \textit{Proc. ICML}, 2025, arXiv:2306.10512v4.
+\bibitem{jiang2026} H. Jiang et al., ``Can We Trust Item Response Theory for AI Evaluation?,'' arXiv:2607.15190, 2026.
+\bibitem{shang2026} E. Shang, W. Tang, and Y. He, ``LLM Evaluation on Unseen Questions: Contextual Multidimensional IRT Model,'' arXiv:2608.22295, 2026.
+\bibitem{measurement} AIMS Foundations, ``measurement-db,'' dataset card, accessed Oct. 19, 2026. [Online]. Available: \url{https://huggingface.co/datasets/aims-foundations/measurement-db}
+\end{thebibliography}
+
+\end{document}
