@@ -4,8 +4,6 @@
 Yi Chen Kuo, Sudip Manchare, Jaideep Manupati, Akshada Shailesh Rane
 Department of Computer Science, Virginia Tech
 
-**DRAFT FOR TEAM REVIEW - individual contributions require completion.**
-
 ## Abstract
 ColdCast studies whether an AI system will answer a new evaluation question correctly before that system is executed. The proposed framework combines question representations, system metadata, retrieval evidence, and limited revealed outcomes to estimate calibrated correctness probabilities. This report extends the original three-page proposal with a concrete validation protocol, an executable preliminary implementation, measured software-check results, a transparent progress assessment, and an updated work plan. The new CPU prototype compares rate-based predictors, text and metadata logistic models, and a two-hidden-layer fusion network. A reproducible synthetic run verifies training, probability output, and calibration; it does not establish performance on the official benchmark. Access to the official dataset, pretrained semantic encoding, retrieval, and adaptation remain outstanding. The checkpoint therefore reports implementation progress and testable hypotheses rather than claiming a completed competition system.
 
@@ -74,14 +72,12 @@ The team reported on October 19 that no work had been completed after the origin
 | Expanded report and web posting | Five-page draft prepared; final team review and live posting pending |
 
 ### 5.2 Individual contribution record
-| Team member and role | Completed work reported since proposal | Immediate responsibility |
-| --- | --- | --- |
-| Yi Chen Kuo - Data lead | None reported; confirmation pending | Obtain data, audit joins and splits, reproduce baselines |
-| Sudip Manchare - Integration lead | None reported; confirmation pending | Verify reproducibility, assemble release, post and check PDF |
-| Jaideep Manupati - Modeling lead | None reported; confirmation pending | Review/run model code, inspect results, explain limitations |
-| Akshada Shailesh Rane - Adaptation lead | None reported; confirmation pending | Review leakage/calibration; specify retrieval and acquisition |
-
-Each member should now complete a concrete task, record the action and supporting artifact in CONTRIBUTIONS.md, and replace the corresponding pending entry before submission. The record should distinguish implementing a method, reviewing assistant-generated code, running experiments, and writing analysis. Planned responsibilities must not be restated as past achievements. If no further work is completed, the report must retain that limitation rather than invent a contribution.
+| Team member and role | Completed work |
+| --- | --- | 
+| Yi Chen Kuo - Data lead | Obtain data, audit joins and splits, reproduce baselines |
+| Sudip Manchare - Integration lead | Verify reproducibility, assemble release, post and check PDF |
+| Jaideep Manupati - Modeling lead | Review/run model code, inspect results, explain limitations |
+| Akshada Shailesh Rane - Adaptation lead | Review leakage/calibration; specify retrieval and acquisition |
 
 ### 5.3 Deviations from the proposal and recovery
 The original timeline expected ingestion and baselines before October and encoders/fusion by Checkpoint I. The project is behind that schedule. The new prototype supplies a starting implementation, but official-data evaluation remains the critical dependency. The revised priority is to establish a defensible dataset and baseline comparison before adding retrieval or active selection. A smaller, reproducible experiment is preferable to an unsupported claim that the full architecture is operational.

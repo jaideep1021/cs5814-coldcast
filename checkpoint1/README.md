@@ -3,7 +3,7 @@
 The real-data pilot and updated **five-page IEEE report** are complete. Public posting and verification remain pending. Deadline: October 20, 2026, before class.
 
 - [IEEE LaTeX source](ColdCast_Checkpoint_I_IEEE.tex)
-- [Five-page PDF](output/pdf/ColdCast_Checkpoint_I_IEEE.pdf)
+- [Project report pdf](output/pdf/ColdCast_Checkpoint_I_IEEE.pdf)
 - [Measured results and reproduction commands](REAL_RESULTS.md)
 - [Individual contribution record](CONTRIBUTIONS.md)
 
